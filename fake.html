@@ -1,0 +1,466 @@
+const { parse, isBefore, isEqual } = dateFns;
+const startdataEl = document.getElementById("startDate");
+const enddataEl = document.getElementById("endDate");
+const starttimeEl = document.getElementById("startTime");
+const endtimeEl = document.getElementById("endTime");
+const addprice = document.getElementById("Addprice");
+const Addcategory = document.getElementById("Addcategory");
+const addpriceplan = document.getElementById("addpriceplan");
+const tdata = document.getElementById("tdata");
+const tdata2 = document.getElementById("tdata2");
+const tdata3 = document.getElementById("tdata3");
+const updatebtn = document.getElementById("update");
+const thearterinput = document.querySelector("#thearter input[type='text']");
+const selects = document.getElementById("theaterSelect");
+const h1 = document.getElementById("element");
+const alldatetime = [];
+const timeRanges = [];
+function updateIfReady() {
+  if (
+    startdataEl.value ||
+    enddataEl.value ||
+    starttimeEl.value ||
+    endtimeEl.value
+  ) {
+    alldatetime.length = 0;
+    alldatetime.push({
+      startdate: startdataEl.value,
+      enddate: enddataEl.value,
+      starttime: starttimeEl.value,
+      endtime: endtimeEl.value,
+    });
+    console.log("Updated datetime:", alldatetime[0]);
+  }
+}
+
+[startdataEl, enddataEl, starttimeEl, endtimeEl].forEach((input) => {
+  input.addEventListener("change", updateIfReady);
+});
+
+function showtime() {
+  updateIfReady();
+
+  const { startdate, enddate, starttime, endtime } = alldatetime[0] || {};
+
+  if (startdate && enddate && starttime && endtime) {
+    const trEl = document.createElement("tr");
+
+    // Name input
+    const tdName = document.createElement("td");
+    const nameEl = document.createElement("input");
+    nameEl.type = "text";
+    nameEl.placeholder = "Enter Your Show Name";
+    tdName.appendChild(nameEl);
+    trEl.appendChild(tdName);
+
+    // Start Time input
+    const tdStart = document.createElement("td");
+    const startEl = document.createElement("input");
+    startEl.type = "time";
+    tdStart.appendChild(startEl);
+    trEl.appendChild(tdStart);
+
+    // End Time input
+    const tdEnd = document.createElement("td");
+    const endEl = document.createElement("input");
+    endEl.type = "time";
+    tdEnd.appendChild(endEl);
+    trEl.appendChild(tdEnd);
+
+    // Remove button
+    const tdBtn = document.createElement("td");
+    const removeBtn = document.createElement("button");
+    removeBtn.classList = "btn";
+    removeBtn.textContent = "Remove";
+    removeBtn.onclick = function () {
+      this.closest("tr").remove();
+      validate(null); // Recalculate all
+    };
+    tdBtn.appendChild(removeBtn);
+    trEl.appendChild(tdBtn);
+
+    // Add to DOM
+    tdata.appendChild(trEl);
+    [nameEl, startEl, endEl].forEach((input) => {
+      input.addEventListener("change", () => validate(trEl));
+    });
+  }
+}
+
+function validate(row) {
+  const rows = tdata.querySelectorAll("tr");
+  if (!row) return;
+
+  const inputs = row.querySelectorAll("input");
+  const newstart = inputs[1].value;
+  const newend = inputs[2].value;
+
+  if (!newstart || !newend) return;
+  
+}
+
+addprice.addEventListener("click", () => {
+  console.log(addprice);
+  const lastRow = tdata.querySelector("tr:last-child");
+
+  if (lastRow) {
+    const inputs = lastRow.querySelectorAll("input");
+    const nameVal = inputs[0]?.value.trim();
+    const startVal = inputs[1]?.value;
+    const endVal = inputs[2]?.value;
+
+    if (!nameVal || !startVal || !endVal) {
+      showCustomAlert(
+        "Please fill in all fields (Name, Start Time, End Time) before adding another showtime."
+      );
+      return;
+    }
+  }
+  showtime();
+});
+
+const addTimeRange = () => {
+  const startVal = startInput.value;
+  const endVal = endInput.value;
+
+  if (!startVal || !endVal) {
+    alert("Please enter both start and end times.");
+    return;
+  }
+
+  const baseDate = new Date();
+  const start = parse(startVal, "HH:mm", baseDate);
+  const end = parse(endVal, "HH:mm", baseDate);
+  console.log(start, end);
+  if (isEqual(start, end)) {
+    alert("Start and end time cannot be the same.");
+    return;
+  }
+
+  if (!isBefore(start, end)) {
+    alert("Start must be before end.");
+    return;
+  }
+
+  //  Stricter check: block overlapping AND touching ranges
+  const isOverlap = timeRanges.some((range) => {
+    return start <= range.end && end >= range.start;
+  });
+
+  if (isOverlap) {
+    alert("Time range overlaps or touches another.");
+    return;
+  }
+
+  timeRanges.push({ start, end });
+
+  const li = document.createElement("li");
+  li.textContent = `${startVal} - ${endVal}`;
+  listEl.appendChild(li);
+
+  //   alert("Time range added.");
+  startInput.value = "";
+  endInput.value = "";
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const { parse, isBefore, isEqual } = dateFns;
+const startdataEl = document.getElementById("startDate");
+const enddataEl = document.getElementById("endDate");
+const starttimeEl = document.getElementById("startTime");
+const endtimeEl = document.getElementById("endTime");
+const addprice = document.getElementById("Addprice");
+const Addcategory = document.getElementById("Addcategory");
+const addpriceplan = document.getElementById("addpriceplan");
+const tdata = document.getElementById("tdata");
+const tdata2 = document.getElementById("tdata2");
+const tdata3 = document.getElementById("tdata3");
+const updatebtn = document.getElementById("update");
+const thearterinput = document.querySelector("#thearter input[type='text']");
+const selects = document.getElementById("theaterSelect");
+const h1 = document.getElementById("element");
+const alldatetime = [];
+// console.log()
+const timeRanges = [];
+
+
+let previousStart = starttimeEl.value;
+let previousEnd = endtimeEl.value;
+
+function hasAnyShowtimeRow() {
+  return tdata.querySelectorAll("tr").length > 0;
+}
+
+//  Start time change
+starttimeEl.addEventListener("change", function () {
+  if (hasAnyShowtimeRow()) {
+    const confirmChange = confirm("Changing default start time will revalidate all showtimes. Continue?");
+    if (confirmChange) {
+      updateIfReady();
+      previousStart = starttimeEl.value;
+    } else {
+      starttimeEl.value = previousStart;
+    }
+  } else {
+    updateIfReady(); // no rows = no confirmation
+    previousStart = starttimeEl.value;
+  }
+});
+
+//  End time change
+endtimeEl.addEventListener("change", function () {
+  if (hasAnyShowtimeRow()) {
+    const confirmChange = confirm("Changing default end time will revalidate all showtimes. Continue?");
+    if (confirmChange) {
+      updateIfReady();
+      previousEnd = endtimeEl.value;
+    } else {
+      endtimeEl.value = previousEnd;
+    }
+  } else {
+    updateIfReady();
+    previousEnd = endtimeEl.value;
+  }
+});
+
+function updateIfReady() {
+  if (
+    startdataEl.value ||
+    enddataEl.value ||
+    starttimeEl.value ||
+    endtimeEl.value
+  ) {
+    alldatetime.length = 0;
+    alldatetime.push({
+      startdate: startdataEl.value,
+      enddate: enddataEl.value,
+      starttime: starttimeEl.value,
+      endtime: endtimeEl.value,
+      
+    });
+    console.log("Updated datetime:", alldatetime[0]);
+    revalidateAllRows();
+  }
+}
+
+
+[startdataEl, enddataEl, starttimeEl, endtimeEl].forEach((input) => {
+  input.addEventListener("change", updateIfReady);
+});
+function revalidateAllRows() {
+  const rows = tdata.querySelectorAll("tr");
+  rows.forEach((row) => validate(row));
+}
+function showtime() {
+  updateIfReady();
+
+  const { startdate, enddate, starttime, endtime } = alldatetime[0] || {};
+
+  if (startdate && enddate && starttime && endtime) {
+    const trEl = document.createElement("tr");
+
+    // Name input
+    const tdName = document.createElement("td");
+    const nameEl = document.createElement("input");
+    nameEl.type = "text";
+    nameEl.placeholder = "Enter Your Show Name";
+    tdName.appendChild(nameEl);
+    trEl.appendChild(tdName);
+
+    // Start Time input
+    const tdStart = document.createElement("td");
+    const startEl = document.createElement("input");
+    startEl.type = "time";
+    // startEl.setAttribute(
+    //   "onkeydown",
+    //   "return event.key < '0' || event.key > '9'"
+    // );
+    tdStart.appendChild(startEl);
+    trEl.appendChild(tdStart);
+
+    // End Time input
+    const tdEnd = document.createElement("td");
+    const endEl = document.createElement("input");
+    endEl.type = "time";
+    // endEl.setAttribute(
+    //   "onkeydown",
+    //   "return event.key < '0' || event.key > '9'"
+    // );
+    tdEnd.appendChild(endEl);
+    trEl.appendChild(tdEnd);
+
+    // Remove button
+    const tdBtn = document.createElement("td");
+    const removeBtn = document.createElement("button");
+    removeBtn.classList = "btn";
+    removeBtn.textContent = "Remove";
+    removeBtn.onclick = function () {
+      this.closest("tr").remove();
+      validate(null); // Recalculate all
+    };
+    tdBtn.appendChild(removeBtn);
+    trEl.appendChild(tdBtn);
+
+    // Add to DOM
+    tdata.appendChild(trEl);
+    [nameEl, startEl, endEl].forEach((input) => {
+      input.addEventListener("change", () => validate(trEl));
+    });
+  }
+}
+
+function validate(row) {
+
+  const inputs = row.querySelectorAll("input");
+  const newstart = inputs[1].value;
+  const newend = inputs[2].value;
+
+  if (!newstart || !newend) return;
+
+  const basedate = new Date();
+
+  // Parse all times
+  const defaultStart = parse(alldatetime[0].starttime, "HH:mm", basedate);
+  const defaultEnd = parse(alldatetime[0].endtime, "HH:mm", basedate);
+  const newStartTime = parse(newstart, "HH:mm", basedate);
+  const newEndTime = parse(newend, "HH:mm", basedate);
+
+  // 1. Start must be before end
+  if (!isBefore(newStartTime, newEndTime)) {
+    alert("Start time must be before end time.");
+    inputs[2].value = "";
+    return;
+  }
+
+  // 2. Must be within default allowed range
+  if (isBefore(newStartTime, defaultStart)) {
+    alert(`Start time must be after: ${alldatetime[0].starttime}`);
+    inputs[1].value = "";
+    return;
+  }
+
+  if (isBefore(defaultEnd, newEndTime)) {
+    alert(`End time must be before: ${alldatetime[0].endtime}`);
+    inputs[2].value = "";
+    return;
+  }
+
+  // 4. Overlap or touch detection
+  const rows = tdata.querySelectorAll("tr");
+  for (let tr of rows) {
+    if (tr === row) continue;
+
+    const otherInputs = tr.querySelectorAll("input");
+    const otherStart = parse(otherInputs[1].value, "HH:mm", basedate);
+    const otherEnd = parse(otherInputs[2].value, "HH:mm", basedate);
+
+    // if (
+    //   newStartTime.getHours() === otherEnd.getHours() &&
+    //   newStartTime.getMinutes() === otherEnd.getMinutes()
+    // ) {
+    //   alert("Start time and End time cannot be the same.");
+    //   inputs[1].value = "";
+    //   inputs[2].value = "";
+    //   return;
+    // }
+    if (isEqual(newStartTime, otherEnd)) {
+      alert("Start time and End time cannot be the same.");
+      inputs[1].value = "";
+      // inputs[2].value = "";
+      return;
+    }
+    const overlap2 = newStartTime < otherEnd && isEqual(newEndTime, otherEnd);
+    const overlap3 = newStartTime < otherEnd && newEndTime > otherEnd;
+    if (overlap2) {
+      alert("This time range overlaps or touches another showtime1.");
+      inputs[1].value = "";
+      inputs[2].value = "";
+      return;
+    }
+
+    if (overlap3) {
+      alert("This time range overlaps or touches another showtime.");
+      inputs[1].value = "";
+      return;
+    }
+  }
+}
+
+addprice.addEventListener("click", () => {
+  console.log(addprice);
+  const lastRow = tdata.querySelector("tr:last-child");
+
+  if (lastRow) {
+    const inputs = lastRow.querySelectorAll("input");
+    const nameVal = inputs[0]?.value.trim();
+    const startVal = inputs[1]?.value;
+    const endVal = inputs[2]?.value;
+
+    if (!nameVal || !startVal || !endVal) {
+      showCustomAlert(
+        "Please fill in all fields (Name, Start Time, End Time) before adding another showtime."
+      );
+      return;
+    }
+  }
+  showtime();
+});
+
+// const addTimeRange = () => {
+//   const startVal = startInput.value;
+//   const endVal = endInput.value;
+
+//   if (!startVal || !endVal) {
+//     alert("Please enter both start and end times.");
+//     return;
+//   }
+
+//   const baseDate = new Date();
+//   const start = parse(startVal, "HH:mm", baseDate);
+//   const end = parse(endVal, "HH:mm", baseDate);
+//   console.log(start, end);
+//   if (isEqual(start, end)) {
+//     alert("Start and end time cannot be the same.");
+//     return;
+//   }
+
+//   if (!isBefore(start, end)) {
+//     alert("Start must be before end.");
+//     return;
+//   }
+
+//   //  Stricter check: block overlapping AND touching ranges
+//   const isOverlap = timeRanges.some((range) => {
+//     return start <= range.end && end >= range.start;
+//   });
+
+//   if (isOverlap) {
+//     alert("Time range overlaps or touches another.");
+//     return;
+//   }
+
+//   timeRanges.push({ start, end });
+
+//   const li = document.createElement("li");
+//   li.textContent = `${startVal} - ${endVal}`;
+//   listEl.appendChild(li);
+
+//   //   alert("Time range added.");
+//   startInput.value = "";
+//   endInput.value = "";
+// };
