@@ -171,7 +171,7 @@ function showtime() {
           if (allShowtimeDivs[removedIndex]) {
             allShowtimeDivs[removedIndex].remove();
           }
-          console.log("showtimestartEl===========>",showtimestartEl.querySelectorAll("input[type='date']").value)
+          console.log("showtimestartEl===========>",showtimestartEl.querySelectorAll("input[type='date']").va)
           console.log("showtimetd===========>",showtimeTd)
           console.log("allShowtimeDivs===========>",allShowtimeDivs)
         });
