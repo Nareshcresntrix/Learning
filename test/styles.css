@@ -79,6 +79,18 @@ select {
 select:focus {
   outline: none;
 }
+.icon {
+    position: relative;
+    float: right;
+    bottom: 35px;
+    right: 16px;
+}
+.icon2 {
+    float: right;
+    position: relative;
+    bottom: 25px;
+    right: 10px;
+}
 /* showtime---------------------- */
 
 .showtime {

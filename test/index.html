@@ -8,8 +8,16 @@
     <script src="https://cdn.jsdelivr.net/npm/date-fns@3.6.0/cdn.min.js"></script>
     <link
       rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link
+      rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
     />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   </head>
 
@@ -27,7 +35,9 @@
           <div class="card-form">
             <label for="">Event Date Range</label>
             <input type="date" id="startDate" />
+            
             <input type="date" id="endDate" />
+        
           </div>
           <div class="card-form">
             <label for="">Default Daily Start/End Time</label>
@@ -129,7 +139,44 @@
                 <td>Action</td>
               </tr>
             </thead>
-            <tbody id="tdata3"></tbody>
+            <tbody id="tdata3">
+              <!-- <tr>
+                <td>
+                  <div class="priceinput">
+                    <input type="text" />
+                    <span><i class="fa-solid fa-calendar-days icon2"></i></span>
+                  </div>
+                </td>
+                <td>
+                  <div class="priceinput">
+                    <input type="text" />
+                    <span><i class="fa-solid fa-calendar-days icon2"></i></span>
+                  </div>
+                </td>
+                <td>
+                  <div class="show-ckeckbox">
+                    <input type="checkbox" id="show" />
+                    <label for="show">A</label>
+                  </div>
+                </td>
+
+                <td>
+                  <div class="pricing-showtime">
+                    <div>
+                      <input type="checkbox" />
+                      <label for="">Vip</label>
+                    </div>
+                    <div class="pricing-showtime-in">
+                      <input type="text" />
+                      <input type="text" />
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <button onclick="this.closest('tr').remove()">Remove</button>
+                </td>
+              </tr> -->
+            </tbody>
           </table>
           <div class="add-priceplan">
             <button class="addBtn3" id="addpriceplan">
