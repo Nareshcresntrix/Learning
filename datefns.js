@@ -1,4 +1,4 @@
-const { parse, isBefore, isEqual, isAfter, isValid,parseISO } = dateFns;
+const { parse, isBefore, isEqual, isAfter, isValid, parseISO } = dateFns;
 const startdataEl = document.getElementById("startDate");
 const enddataEl = document.getElementById("endDate");
 const starttimeEl = document.getElementById("startTime");
@@ -17,12 +17,15 @@ const alldatetime = [];
 
 let previousStart = starttimeEl.value;
 let previousEnd = endtimeEl.value;
-
+let perviousstartdate = startdataEl.value;
+let perviousenddate = enddataEl.value;
 //  Check if any row exists
 function hasAnyShowtimeRow() {
   return tdata.querySelectorAll("tr").length > 0;
 }
-
+function hasAnyPricePlan() {
+  return tdata3.querySelectorAll("tr").length > 0;
+}
 //  Clear all time inputs in the daily showtimes table
 function clearAllDailyTimeInputs() {
   if (alldatetime.length === 0) return;
@@ -55,7 +58,40 @@ function clearAllDailyTimeInputs() {
   });
   validate(row);
 }
+function clearalldate() {
+  if (alldatetime.length === 0) return;
 
+  const defaultstartdate = parseISO(alldatetime[0].startdate);
+  const defaultenddate = parseISO(alldatetime[0].enddate);
+
+  const rows = tdata3.querySelectorAll("tr");
+
+  rows.forEach((row) => {
+    const inputs = row.querySelectorAll("input");
+    const stdate = inputs[0];
+    const enddate = inputs[1];
+
+    //  Fix logic: you had `if (!stdate || !enddate || !stdate.value || enddate.value) return`
+    if (!stdate || !enddate || !stdate.value || !enddate.value) return;
+
+    const newstdate = parseISO(stdate.value);
+    const newenddate = parseISO(enddate.value);
+
+    const isoutrange =
+      isBefore(newstdate, defaultstartdate) ||
+      isAfter(newenddate, defaultenddate);
+
+    if (isoutrange) {
+      stdate.value = "";
+      enddate.value = "";
+    }
+    if (isEqual(newstdate, newstdate)) {
+      stdate.value = "";
+      enddate.value = "";
+    }
+  });
+  validateDates();
+}
 //  Update the default time values and trigger validation
 function updateIfReady() {
   if (
@@ -113,6 +149,41 @@ endtimeEl.addEventListener("change", function () {
   }
 });
 
+startdataEl.addEventListener("change", () => {
+  if (hasAnyPricePlan()) {
+    const confirmchange = confirm(
+      "Changing default start date will clear all daily showtimes. You can refill them. Continue?"
+    );
+    if (confirmchange) {
+      updateIfReady();
+      clearalldate();
+      perviousstartdate = startdataEl.value;
+    } else {
+      startdataEl.value = perviousstartdate;
+    }
+  } else {
+    updateIfReady();
+    perviousstartdate = startdataEl.value;
+  }
+});
+
+enddataEl.addEventListener("change", () => {
+  if (hasAnyPricePlan()) {
+    const confirmchange = confirm(
+      "Changing default end date will clear all daily showtimes. You can refill them. Continue?"
+    );
+    if (confirmchange) {
+      updateIfReady();
+      clearalldate();
+      perviousenddate = enddataEl.value;
+    } else {
+      enddataEl.value = perviousenddate;
+    }
+  } else {
+    updateIfReady();
+    perviousenddate = enddataEl.value;
+  }
+});
 function showtime() {
   updateIfReady();
 
@@ -406,7 +477,17 @@ function validate(row) {
 }
 
 addprice.addEventListener("click", () => {
-  console.log(addprice);
+  if (
+    !startdataEl.value ||
+    !enddataEl.value ||
+    !starttimeEl.value ||
+    !endtimeEl.value
+  ) {
+    alert(
+      "Please fill in all fields (Start Date, End Date, Start Time, End Time) before adding another showtime."
+    );
+    return;
+  }
   const lastRow = tdata.querySelector("tr:last-child");
 
   if (lastRow) {
@@ -416,12 +497,13 @@ addprice.addEventListener("click", () => {
     const endVal = inputs[2]?.value;
 
     if (!nameVal || !startVal || !endVal) {
-      showCustomAlert(
+      alert(
         "Please fill in all fields (Name, Start Time, End Time) before adding another showtime."
       );
       return;
     }
   }
+
   showtime();
 });
 
@@ -633,7 +715,10 @@ function pricingplans() {
   tdata3.appendChild(tr3);
   i++;
   j++;
-
+  const rows1 = tdata3.querySelectorAll("tr");
+  const rows = tdata3.querySelectorAll("tr input[type='time']");
+  console.log("tdata3 input", rows);
+  console.log("tdata3", rows1);
   const globalStart = startdataEl.value;
   const globalEnd = enddataEl.value;
 
@@ -641,9 +726,9 @@ function pricingplans() {
     const startVal = pricestartdateinput.value;
     const endVal = priceenddateinput.value;
     const currentStart = parseISO(startVal);
-      const currentEnd = parseISO(endVal);
-      console.log("currentStart", currentStart);
-      console.log("currentEnd", currentEnd);
+    const currentEnd = parseISO(endVal);
+    console.log("currentStart", currentStart);
+    console.log("currentEnd", currentEnd);
     if (startVal && !endVal) {
       if (startVal < globalStart) {
         alert(
@@ -670,9 +755,19 @@ function pricingplans() {
         priceenddateinput.value = "";
       }
     }
-
     if (startVal && endVal) {
-      if (startVal >= globalStart && endVal > globalEnd || startVal>=globalStart && endVal<globalStart) {
+      if (startVal > endVal && endVal < startVal) {
+        alert("Start date cannot be after end date.");
+        // pricestartdateinput.value = "";
+        priceenddateinput.value = "";
+        return;
+      }
+    }
+    if (startVal && endVal) {
+      if (
+        (startVal >= globalStart && endVal > globalEnd) ||
+        (startVal >= globalStart && endVal < globalStart)
+      ) {
         alert(
           `Start date cannot be before the event start date (${globalStart})`
         );
@@ -687,32 +782,109 @@ function pricingplans() {
       const exStart = inputs[0]?.value;
       const exEnd = inputs[1]?.value;
 
-  
       const existingStart = parseISO(exStart);
       const existingEnd = parseISO(exEnd);
       console.log("existingStart", existingStart);
       console.log("existingEnd", existingEnd);
-      console.log(currentStart, "===", existingEnd)
+      console.log(currentStart, "===", existingEnd);
 
-      if (isEqual(currentStart, existingEnd)) {
-        alert("New start date cannot be equal to an existing end date.");
-        pricestartdateinput.value = "";
-        priceenddateinput.value = "";
-        return;
-      }
-
-      if (isValid(currentStart) && isValid(currentEnd)) {
-        if (currentStart < existingStart && currentEnd <= existingEnd) {
-          alert("Date range overlaps with an existing pricing plan1.");
-          priceenddateinput.value = "";
-          return;
-        }
-      }
-      if(isValid(currentStart) && !isValid(currentEnd)) {
-        if(currentStart<=existingStart) {
+      if (isValid(currentStart) && !isValid(currentEnd)) {
+        if (currentStart >= existingStart && currentStart <= existingEnd) {
           alert("Date range overlaps with an existing pricing plan2.");
+          pricestartdateinput.value = "";
         }
       }
+      if (!isValid(currentStart) && isValid(currentEnd)) {
+        if (currentEnd <= existingEnd && currentEnd >= existingStart) {
+          alert("Date range overlaps with an existing pricing plan3.");
+          priceenddateinput.value = "";
+        }
+      }
+      if (isValid(currentStart) && isValid(currentEnd)) {
+        if (
+          (currentStart > existingEnd && currentEnd <= existingEnd) ||
+          (currentEnd > existingStart && currentEnd < existingEnd) ||
+          (currentStart < existingStart && currentEnd >= existingEnd)
+        ) {
+          alert("Date range overlaps with an existing pricing plan4.");
+          priceenddateinput.value = "";
+        }
+        // if (currentEnd > existingStart && currentEnd < existingEnd) {
+        //   alert("Date range overlaps with an existing pricing plan5.");
+        //   priceenddateinput.value = "";
+        // }
+        // if (currentStart < existingStart && currentEnd >= existingEnd) {
+        //   alert("Date range overlaps with an existing pricing plan6.");
+        //   priceenddateinput.value = "";
+        // }
+        else if (currentEnd > existingEnd && currentStart <= existingEnd) {
+          alert("Date range overlaps with an existing pricing plan8.");
+          pricestartdateinput.value = "";
+        }
+      }
+      if (isEqual(currentEnd, existingStart)) {
+        alert("Date range overlaps with an existing pricing plan7.");
+        priceenddateinput.value = "";
+      }
+      //  if(currentStart<existingStart) {
+      //   alert("Date range overlaps with an existing pricing plan9.");
+      //   priceenddateinput.value = "";
+      // }
+      // if (isValid(currentStart) && isValid(currentEnd)) {
+      //   if (currentStart <= existingEnd) {
+      //     alert("Date range overlaps with an existing pricing plan1.");
+      //     priceenddateinput.value = "";
+      //   }
+      // }
+      // if (isEqual(currentStart, existingEnd)) {
+      //   alert("New start date cannot be equal to an existing end date.");
+      //   pricestartdateinput.value = "";
+      //   priceenddateinput.value = "";
+      //   return;
+      // }
+
+      // if (isValid(currentStart) && isValid(currentEnd)) {
+      //   if (currentStart < existingStart && currentEnd <= existingEnd) {
+      //     alert("Date range overlaps with an existing pricing plan1.");
+      //     priceenddateinput.value = "";
+      //     return;
+      //   }
+      // }
+      // if(isValid(currentStart) && !isValid(currentEnd)) {
+      //   if(currentStart<=existingStart) {
+      //     alert("Date range overlaps with an existing pricing plan2.");
+      //   }
+      // }
+
+      //        if (!isValid(currentStart) && isValid(currentEnd)) {
+      //     if (currentEnd <= existingEnd && currentEnd >= existingStart) {
+      //       alert("Date range overlaps with an existing pricing plan3.");
+      //       priceenddateinput.value = "";
+      //     }
+      //   }
+      //   if (isValid(currentStart) && isValid(currentEnd)) {
+      //     if (currentStart > existingEnd && currentEnd <= existingEnd) {
+      //       alert("Date range overlaps with an existing pricing plan4.");
+      //       priceenddateinput.value = "";
+      //     }
+      //     if (currentEnd > existingStart && currentEnd < existingEnd) {
+      //       alert("Date range overlaps with an existing pricing plan5.");
+      //       priceenddateinput.value = "";
+      //     }
+      //     if (currentStart < existingStart && currentEnd >= existingEnd) {
+      //       alert("Date range overlaps with an existing pricing plan6.");
+      //       priceenddateinput.value = "";
+      //     }
+      //     else if (currentEnd > existingEnd && currentStart <= existingEnd) {
+      //       alert("Date range overlaps with an existing pricing plan8.");
+      //       pricestartdateinput.value = "";
+      //     }
+
+      //   }
+      //   if (isEqual(currentEnd, existingStart)||isEqual(currentStart, existingEnd)) {
+      //     alert("Date range overlaps with an existing pricing plan7.");
+      //     priceenddateinput.value = "";
+      //   }
     }
   };
 
@@ -872,3 +1044,70 @@ function updateTicketCategory() {
     });
   });
 }
+// if (isValid(currentStart) && !isValid(currentEnd)) {
+//     if (currentStart >= existingStart && currentStart <= existingEnd) {
+//       alert("Date range overlaps with an existing pricing plan2.");
+//       pricestartdateinput.value = "";
+//     }
+//   }
+//   if (!isValid(currentStart) && isValid(currentEnd)) {
+//     if (currentEnd<=existingEnd && currentEnd >= existingStart) {
+//       alert("Date range overlaps with an existing pricing plan3.");
+//       priceenddateinput.value = "";
+//     }
+//   }
+//   if(isValid(currentStart) && isValid(currentEnd)) {
+//     if(currentStart>existingEnd &&currentEnd<=existingEnd ) {
+//       alert("Date range overlaps with an existing pricing plan4.");
+//       priceenddateinput.value = "";
+//     }
+//     if( currentEnd>existingStart&& currentEnd<existingEnd) {
+//       alert("Date range overlaps with an existing pricing plan5.");
+//       priceenddateinput.value = "";
+//     }
+//     if(currentStart<=existingStart && currentEnd>existingEnd ) {
+//       alert("Date range overlaps with an existing pricing plan6.");
+//       priceenddateinput.value = "";
+//     }
+//     if(isEqual(currentEnd,existingStart)) {
+//       alert("Date range overlaps with an existing pricing plan7.");
+//       priceenddateinput.value = "";
+//     }
+//   }
+
+//     let overlapFound = false;
+//
+// if (!overlapFound && isValid(currentStart) && !isValid(currentEnd)) {
+//   if (currentStart >= existingStart && currentStart <= existingEnd) {
+//     alert("Date range overlaps with an existing pricing plan2.");
+//     pricestartdateinput.value = "";
+//     overlapFound = true;
+//   }
+// }
+//
+// if (!overlapFound && !isValid(currentStart) && isValid(currentEnd)) {
+//   if (currentEnd <= existingEnd && currentEnd >= existingStart) {
+//     alert("Date range overlaps with an existing pricing plan3.");
+//     priceenddateinput.value = "";
+//     overlapFound = true;
+//   }
+// }
+//
+// if (!overlapFound && isValid(currentStart) && isValid(currentEnd)) {
+//   if (currentStart > existingEnd && currentEnd <= existingEnd) {
+//     alert("Date range overlaps with an existing pricing plan4.");
+//     priceenddateinput.value = "";
+//     overlapFound = true;
+//   } else if (currentEnd > existingStart && currentEnd < existingEnd) {
+//     alert("Date range overlaps with an existing pricing plan5.");
+//     priceenddateinput.value = "";
+//     overlapFound = true;
+//   } else if (
+//     (currentStart <= existingStart && currentEnd >= existingEnd) ||
+//     isEqual(currentEnd, existingStart)
+//   ) {
+//     alert("Date range overlaps with an existing pricing plan6.");
+//     priceenddateinput.value = "";
+//     overlapFound = true;
+//   }
+// }
