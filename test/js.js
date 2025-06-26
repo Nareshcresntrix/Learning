@@ -16,9 +16,6 @@ const theaternamearrEl = [];
 const alldatetime = [];
 const allcreateshowtime = [];
 
-
-
-
 // Update datetime range if inputs are ready
 function updateIfReady() {
   if (
@@ -561,3 +558,43 @@ addprice.addEventListener("click", () => {
 // }
 
 // // Helper function to convert HH:MM to minutes
+
+eventmangement = [
+  eventdefaultstartandend = {
+    startdate: "",
+    enddate: "",
+    starttime: "",
+    endtime: "",
+  },
+  showtime = {
+    Name: "",
+    starttime: "",
+    endtime: "",
+  },
+  ticketcategory={
+    category: "",
+      price: "",
+      count: "",
+  },
+  pricingplans={
+    startdate: "",
+    enddate: "",
+    shows: "",
+    tickets: [
+      {
+        category: "",
+        price: "",
+        count: "",
+      },
+    ],
+  },
+]
+//   (ticketcategory = [
+//     {
+//       category: "",
+//       price: "",
+//       count: "",
+//     },
+//   ]);
+// pricingplans = [{}];
+

@@ -31,7 +31,7 @@ app.get("/users/:id", (req, res) => {
   console.log("id: " + req.params.id);
   const sql = `select * from users where id=${req.params.id}`;
   conn.query(sql, (err, result) => {
-    if (!err) {
+    if (!err) { 
       res.send(result);
     } else {
       throw err;
