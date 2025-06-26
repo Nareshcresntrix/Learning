@@ -978,10 +978,13 @@ function submitEvent() {
   });
 
   // Example: loop ticket category rows
-  document.querySelectorAll("#tdata2 tr").forEach((row) => {
-    const cat = row.querySelector(".ticket-cat").value;
-    const price = row.querySelector(".ticket-price").value;
-    const count = row.querySelector(".ticket-count").value;
+  tdata2.querySelectorAll("tr").forEach((row) => {
+    // const cat = row.querySelector(".ticket-cat").value;
+    // const price = row.querySelector(".ticket-price").value;
+    // const count = row.querySelector(".ticket-count").value;
+    const cat = row.querySelectorAll("input")[0].value;
+    const price = row.querySelectorAll("input")[1].value;
+    const count = row.querySelectorAll("input")[2].value;
 
     if (cat && price && count) {
       eventmanagement.ticketcategories.push({
@@ -993,7 +996,7 @@ function submitEvent() {
   });
 
   // Example: loop pricing plans
-  document.querySelectorAll(".pricing-plan").forEach((planBlock) => {
+  tdata3.querySelectorAll("tr").forEach((planBlock) => {
     const start = planBlock.querySelector(".plan-start").value;
     const end = planBlock.querySelector(".plan-end").value;
     const shows = planBlock.querySelector(".plan-show").value;
