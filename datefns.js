@@ -178,6 +178,11 @@ enddataEl.addEventListener("change", () => {
   }
 });
 function showtime() {
+  // fetch(`http://localhost:3000/event/${eventId}`)
+  // .then((response) => response.json())
+  // .then((data) => {
+    
+  // })
   updateIfReady();
 
   if (alldatetime.length > 0 && alldatetime[0]) {
@@ -259,10 +264,31 @@ function showtime() {
       // console.log("Tdata===========>", tdata.querySelectorAll("tr"));
       // console.log("tdata===========>", document.querySelectorAll("#tdata tr input"));
       // console.log("tdata===========>", tdata.querySelectorAll("input"));
+      // tdata.querySelectorAll("tr").forEach((row) => {
+      //   const inputs = row.querySelectorAll("input");
+      //   const name = inputs[0];
+      //   console.log("name===========>", name);
+      // });
+      const eventmanagement = {
+        showtimes: [],
+      };
       tdata.querySelectorAll("tr").forEach((row) => {
+        // const name = row.querySelector("input[type='text']").value;
+        // const start = row.querySelector("input[type='time']").value;
+        // const end = row.querySelector("input[type='time']").value;
         const inputs = row.querySelectorAll("input");
-        const name = inputs[0];
-        console.log("name===========>", name);
+
+        const name = inputs[0].value;
+        const start = inputs[1].value;
+        const end = inputs[2].value;
+        if (name && start && end) {
+          eventmanagement.showtimes.push({
+            name,
+            starttime: start,
+            endtime: end,
+          });
+        }
+        console.log("eventmanagement===========>", eventmanagement);
       });
     }
   }
@@ -498,6 +524,27 @@ function ticketcategory() {
       tdata2.appendChild(tr2);
       updateTicketCategory();
     }
+    const eventmanagement = {
+      ticketcategories: [],
+    };
+    tdata2.querySelectorAll("tr").forEach((row) => {
+      // const cat = row.querySelector(".ticket-cat").value;
+      // const price = row.querySelector(".ticket-price").value;
+      // const count = row.querySelector(".ticket-count").value;
+      const inputs = row.querySelectorAll("input");
+      const cat = inputs[0].value;
+      const price = inputs[1].value;
+      const count = inputs[2].value;
+
+      if (cat && price && count) {
+        eventmanagement.ticketcategories.push({
+          category: cat,
+          price: price,
+          count: count,
+        });
+      }
+    });
+    console.log("eventmanagement===========>", eventmanagement);
   }
 }
 Addcategory.addEventListener("click", () => {
@@ -558,8 +605,10 @@ function pricingplans() {
   const pricestartdateinput = document.createElement("input");
   pricestartdatedivEl.classList = "priceinput";
   pricestartdateinput.type = "date";
+  pricestartdateinput.className = "startdate";
   pricestartdatedivEl.append(pricestartdateinput);
   pricestartdatetdEl.append(pricestartdatedivEl);
+  // pricestartdateinput.name=priceenddateinput.value
   tr3.append(pricestartdatetdEl);
 
   const priceenddatatdEl = document.createElement("td");
@@ -567,8 +616,10 @@ function pricingplans() {
   const priceenddateinput = document.createElement("input");
   priceenddatedivEl.classList = "priceinput";
   priceenddateinput.type = "date";
+  priceenddateinput.className = "enddate";
   priceenddatedivEl.append(priceenddateinput);
   priceenddatatdEl.append(priceenddatedivEl);
+  // priceenddateinput.name=priceenddateinput.value
   tr3.append(priceenddatatdEl);
 
   const showtdEl = document.createElement("td");
@@ -579,6 +630,8 @@ function pricingplans() {
     const showinputEl = document.createElement("input");
     showinputEl.type = "checkbox";
     showinputEl.id = `showtime${i}-${index}`;
+    showinputEl.value = el.value;
+    showinputEl.name = el.value;
 
     const showlabelEl = document.createElement("label");
     showlabelEl.htmlFor = `showtime${i}-${index}`;
@@ -597,8 +650,8 @@ function pricingplans() {
   ticketRows.forEach((row, index) => {
     const inputs = row.querySelectorAll("input[type='text']");
     const numberinputs = row.querySelectorAll("input[type='number']");
-    if (inputs.length < 1) return;
-    if (numberinputs.length < 2) return;
+    // if (inputs.length < 1) return;
+    // if (numberinputs.length < 2) return;
     console.log("ticketcategorytdEl", numberinputs);
     const categoryName = inputs[0].value;
     const categoryPrice = numberinputs[0].value;
@@ -610,6 +663,8 @@ function pricingplans() {
     const ticketfirstdivEl = document.createElement("div");
     const ticketfirstinputEl = document.createElement("input");
     ticketfirstinputEl.type = "checkbox";
+    ticketfirstinputEl.value = categoryName;
+    ticketfirstinputEl.name = categoryName;
     ticketfirstinputEl.id = `pricingplan${j}-${index}`;
     const ticketlabelEl = document.createElement("label");
     ticketlabelEl.htmlFor = `pricingplan${j}-${index}`;
@@ -621,11 +676,13 @@ function pricingplans() {
     const ticketsecond1stinput = document.createElement("input");
     ticketsecond1stinput.type = "number";
     ticketsecond1stinput.value = categoryPrice;
+    ticketsecond1stinput.name = categoryPrice;
     ticketsecond1stinput.placeholder = "Price";
 
     const ticketsecond2ndinput = document.createElement("input");
     ticketsecond2ndinput.type = "number";
     ticketsecond2ndinput.value = categoryCount;
+    ticketsecond2ndinput.name = categoryCount;
     ticketsecond2ndinput.placeholder = "Count";
 
     ticketseconddivEl.append(ticketsecond1stinput, ticketsecond2ndinput);
@@ -646,10 +703,70 @@ function pricingplans() {
       validateDates(tr3);
     });
   });
-  const rows1 = tdata3.querySelectorAll("tr");
-  const rows = tdata3.querySelectorAll("tr input[type='date']");
-  console.log("tdata3 input", rows);
-  console.log("tdata3", rows1);
+  // const rows1 = tdata3.querySelectorAll("tr");
+  // // const rows = tdata3.querySelectorAll("tr input[type='date']");
+  // // const inputs=tdata3.querySelectorAll("tr input");
+  // // const test = rows1.querySelectorAll("input");
+  // // const showname=inputs[2]
+  // // console.log("tdata3 input", rows);
+  // // console.log("tdata3", rows1);
+  // // console.log("tdata3", inputs);
+  // // console.log("showname", showname);
+  // // console.log9("tdata3", test);
+  // tdata3.querySelectorAll("tr").forEach((planBlock) => {
+  //   const inputs = planBlock.querySelectorAll("input");
+
+  //   const start = inputs[0]?.value;
+  //   const end = inputs[1]?.value;
+  //   const shows = inputs[2].value;
+  //   const cat = inputs[3].value;
+  //   const price = inputs[4]?.value;
+  //   const count = inputs[5]?.value;
+
+  //   // console.log("All", start, end, shows, cat, price, count);
+  //   console.log(inputs)
+  //   console.log("shows========>",shows)
+  //   console.log("cat==========>", cat);
+  //   console.log("inputs==========>", inputs);
+  // });
+
+  const planBlocks = tdata3.querySelectorAll("tr");
+  planBlocks.forEach((planBlock) => {
+    const start = planBlock.querySelector("input.startdate")?.value;
+    const end = planBlock.querySelector("input.enddate")?.value;
+
+    const checkedShows = Array.from(
+      planBlock.querySelectorAll("input[type='checkbox']")
+    )
+      .filter((cb) => cb.checked && cb.closest(".show-ckeckbox"))
+      .map((cb) => cb.value);
+
+    const ticketCategories = [];
+    planBlock.querySelectorAll(".pricing-showtime").forEach((ticketBlock) => {
+      const checkbox = ticketBlock.querySelector("input[type='checkbox']");
+      const priceInput = ticketBlock.querySelector(
+        ".pricing-showtime-in input:nth-child(1)"
+      );
+      const countInput = ticketBlock.querySelector(
+        ".pricing-showtime-in input:nth-child(2)"
+      );
+
+      if (checkbox?.checked && priceInput && countInput) {
+        ticketCategories.push({
+          category: checkbox.value,
+          price: priceInput.value,
+          count: countInput.value,
+          show: checkedShows.value,
+        });
+      }
+    });
+
+    // console.log("Start:", start);
+    // console.log("End:", end);
+    console.log("Shows:", checkedShows);
+    // console.log("Tickets:", ticketCategories);
+    console.log(ticketCategories);
+  });
 
   // pricestartdateinput.addEventListener("change", validateDates);
   // priceenddateinput.addEventListener("change", validateDates);
@@ -916,38 +1033,36 @@ thearterinput.addEventListener("change", (e) => {
     // thearterinput.value = "";
   }
 });
-
 updatebtn.addEventListener("click", () => {
+  selects.innerHTML = "";
   theaternamearrEl.map((name) => {
     const option = document.createElement("option");
     option.innerText = name;
     option.value = name;
     selects.appendChild(option);
+    thearterinput.value = "";
   });
-
-  theaternamearrEl.length = 0;
+  // theaternamearrEl.length = 0;
+  console.log(theaternamearrEl);
 });
 
-//  const eventmanagement = {
-//     theatername: {
-//       name: document.getElementById("thearterselect").value.trim(),
-//     },
-//     eventdefaultstartandend: {
-//       startdate: alldatetime[0].startdate,
-//       enddate: alldatetime[0].enddate,
-//       starttime: alldatetime[0].starttime,
-//       endtime: alldatetime[0].endtime,
-//     },
-//     showtimes: [],         //  Support multiple
-//     ticketcategories: [],  //  Support multiple
-//     pricingplans: []       //  Support multiple
-//   };
-// console.log(eventmanagement.theatername.name)
-
 function submitEvent() {
+  if (
+    tdata.querySelectorAll("tr").length === 0 ||
+    tdata2.querySelectorAll("tr").length === 0 ||
+    tdata3.querySelectorAll("tr").length === 0
+  ) {
+    alert("Please add at least one showtime, ticket category and pricing plan." );
+    return;
+  }
+  if (theaternamearrEl.length === 0) {
+    alert("Please fill out theater name");
+    return;
+  }
+
   const eventmanagement = {
     theatername: {
-      name: document.getElementById("thearterselect").value.trim(),
+      name: theaternamearrEl,
     },
     eventdefaultstartandend: {
       startdate: alldatetime[0].startdate,
@@ -955,73 +1070,99 @@ function submitEvent() {
       starttime: alldatetime[0].starttime,
       endtime: alldatetime[0].endtime,
     },
-    showtimes: [], //  Support multiple
-    ticketcategories: [], //  Support multiple
-    pricingplans: [], //  Support multiple
+    showtimes: [],
+    ticketcategories: [],
+    pricingplans: [],
   };
 
-  // Example: loop showtime table rows
-  tdata.querySelectorAll("tr").forEach((row) => {
-    // const name = row.querySelector("input[type='text']").value;
-    // const start = row.querySelector("input[type='time']").value;
-    // const end = row.querySelector("input[type='time']").value;
-    const name = row.querySelectorAll("input")[0].value;
-    const start = row.querySelectorAll("input")[1].value;
-    const end = row.querySelectorAll("input")[2].value;
-    if (name && start && end) {
-      eventmanagement.showtimes.push({
-        name,
-        starttime: start,
-        endtime: end,
-      });
+  //  Validate and push showtimes
+  for (const row of tdata.querySelectorAll("tr")) {
+    const inputs = row.querySelectorAll("input");
+    const name = inputs[0]?.value.trim();
+    const start = inputs[1]?.value.trim();
+    const end = inputs[2]?.value.trim();
+
+    if (!name || !start || !end) {
+      alert("Please fill name, start time and end time in all showtimes.");
+      return;
     }
-  });
 
-  // Example: loop ticket category rows
-  tdata2.querySelectorAll("tr").forEach((row) => {
-    // const cat = row.querySelector(".ticket-cat").value;
-    // const price = row.querySelector(".ticket-price").value;
-    // const count = row.querySelector(".ticket-count").value;
-    const cat = row.querySelectorAll("input")[0].value;
-    const price = row.querySelectorAll("input")[1].value;
-    const count = row.querySelectorAll("input")[2].value;
+    eventmanagement.showtimes.push({
+      name,
+      starttime: start,
+      endtime: end,
+    });
+  }
 
-    if (cat && price && count) {
-      eventmanagement.ticketcategories.push({
-        category: cat,
-        price: price,
-        count: count,
-      });
+  //  Validate and push ticket categories
+  for (const row of tdata2.querySelectorAll("tr")) {
+    const inputs = row.querySelectorAll("input");
+    const cat = inputs[0]?.value.trim();
+    const price = inputs[1]?.value.trim();
+    const count = inputs[2]?.value.trim();
+
+    if (!cat || !price || !count) {
+      alert(
+        "Please fill out category, price, and count in all ticket categories."
+      );
+      return;
     }
-  });
 
-  // Example: loop pricing plans
-  tdata3.querySelectorAll("tr").forEach((planBlock) => {
-    const start = planBlock.querySelector(".plan-start").value;
-    const end = planBlock.querySelector(".plan-end").value;
-    const shows = planBlock.querySelector(".plan-show").value;
+    eventmanagement.ticketcategories.push({
+      category: cat,
+      price,
+      count,
+    });
+  }
+
+  //  Validate and push pricing plans
+  for (const planBlock of tdata3.querySelectorAll("tr")) {
+    const start = planBlock.querySelector("input.startdate")?.value;
+    const end = planBlock.querySelector("input.enddate")?.value;
+
+    const shows = Array.from(
+      planBlock.querySelectorAll("input[type='checkbox']")
+    )
+      .filter((cb) => cb.checked && cb.closest(".show-ckeckbox"))
+      .map((cb) => cb.value);
 
     const tickets = [];
-    planBlock.querySelectorAll(".plan-ticket").forEach((ticketRow) => {
-      const cat = ticketRow.querySelector(".plan-cat").value;
-      const price = ticketRow.querySelector(".plan-price").value;
-      const count = ticketRow.querySelector(".plan-count").value;
-      if (cat && price && count) {
-        tickets.push({ category: cat, price, count });
+    const ticketBlocks = planBlock.querySelectorAll(".pricing-showtime");
+
+    for (const ticketBlock of ticketBlocks) {
+      const checkbox = ticketBlock.querySelector("input[type='checkbox']");
+      const priceInput = ticketBlock.querySelector(
+        ".pricing-showtime-in input:nth-child(1)"
+      );
+      const countInput = ticketBlock.querySelector(
+        ".pricing-showtime-in input:nth-child(2)"
+      );
+
+      if (checkbox?.checked && priceInput && countInput) {
+        tickets.push({
+          category: checkbox.value,
+          price: priceInput.value,
+          count: countInput.value,
+        });
       }
-    });
-
-    if (start && end && shows && tickets.length > 0) {
-      eventmanagement.pricingplans.push({
-        startdate: start,
-        enddate: end,
-        shows,
-        tickets,
-      });
     }
-  });
 
-  //  Now send the fetch request
+    if (!start || !end || shows.length === 0 || tickets.length === 0) {
+      alert(
+        "Please complete all pricing plan fields (dates, shows, and ticket details)."
+      );
+      return;
+    }
+
+    eventmanagement.pricingplans.push({
+      startdate: start,
+      enddate: end,
+      shows,
+      tickets,
+    });
+  }
+
+  //  Send POST request
   fetch("http://localhost:3000/event/api", {
     method: "POST",
     headers: {
@@ -1030,8 +1171,16 @@ function submitEvent() {
     body: JSON.stringify(eventmanagement),
   })
     .then((res) => res.json())
-    .then((res) => console.log(" Event submitted successfully:", res))
-    .catch((err) => console.error(" Error submitting event:", err));
+    .then((res) => console.log("Event submitted successfully:", res))
+    .catch((err) => console.error("Error submitting event:", err));
 }
 
 updatebtn.addEventListener("click", submitEvent);
+
+async function displaydefaultdateandtime(){
+  const data=await fetch(`http://localhost:3000/event/${2}`);
+  const res=await data.json();
+  console.log(res)
+  
+}
+displaydefaultdateandtime()
