@@ -1221,6 +1221,7 @@ async function displaydefaultdateandtime(){
   const data=await fetch(`http://localhost:3000/event/1`);
   const res=await data.json();
   console.log(res);
+
 }
 displaydefaultdateandtime()
 

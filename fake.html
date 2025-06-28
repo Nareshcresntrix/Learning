@@ -2749,3 +2749,69 @@ function updateTicketCategory() {
 
 
 https://chatgpt.com/share/685d32e7-6bc0-8004-9664-ee107a653be9
+
+
+
+
+
+create database event_management;
+use event_management;
+
+CREATE TABLE events (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  thearter_name VARCHAR(255) NOT NULL,
+  startdate DATE NOT NULL,
+  enddate DATE NOT NULL,
+  starttime TIME NOT NULL,
+  endtime TIME NOT NULL
+);
+
+
+CREATE TABLE showtimes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  event_id INT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  starttime TIME NOT NULL,
+  endtime TIME NOT NULL,
+  FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE ticket_categories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  event_id INT NOT NULL,
+  category VARCHAR(255) NOT NULL,
+  price DECIMAL(10, 2) NOT NULL,
+  count INT NOT NULL,
+  FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE pricing_plans (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  event_id INT NOT NULL,
+  startdate DATE NOT NULL,
+  enddate DATE NOT NULL,
+  shows text,
+  FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE plan_tickets (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  plan_id INT NOT NULL,
+  category VARCHAR(255) NOT NULL,
+  price DECIMAL(10, 2) NOT NULL,
+  count INT NOT NULL,
+  categorystatus boolean,
+  FOREIGN KEY (plan_id) REFERENCES pricing_plans(id) ON DELETE CASCADE
+);
+
+
+
+
+
+
+
+
+
