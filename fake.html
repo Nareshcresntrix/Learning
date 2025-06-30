@@ -2815,3 +2815,129 @@ CREATE TABLE plan_tickets (
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let allEvents = [];
+
+async function loadAllEvents() {
+  try {
+    const res = await fetch("http://localhost:3000/events/all");
+    allEvents = await res.json();
+    populateTheaterDropdown(allEvents);
+  } catch (err) {
+    console.error("Error loading events:", err);
+  }
+}
+
+function populateTheaterDropdown(events) {
+  const select = document.getElementById("theaterSelect");
+  select.innerHTML = `<option value="">Select Theater</option>`; // Reset
+
+  const uniqueNames = [...new Set(events.map(e => e.event.thearter_name))];
+
+  uniqueNames.map(name => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.innerText = name;
+    select.appendChild(opt);
+  });
+}
+document.getElementById("theaterSelect").addEventListener("change", (e) => {
+  const selected = e.target.value;
+  const eventData = allEvents.find(e => e.event.thearter_name === selected);
+  if (eventData) {
+    fillEventForm(eventData);
+  }
+});
+function fillEventForm(data) {
+  const { event, showtimes, ticketcategories, pricingplans } = data;
+
+  // Fill Date & Time
+  document.getElementById("startDate").value = new Date(event.startdate).toISOString().split("T")[0];
+  document.getElementById("endDate").value = new Date(event.enddate).toISOString().split("T")[0];
+  document.getElementById("startTime").value = event.starttime.slice(0, 5);
+  document.getElementById("endTime").value = event.endtime.slice(0, 5);
+
+  // Fill Showtimes
+  const tdata = document.getElementById("tdata");
+  tdata.innerHTML = "";
+  showtimes.map(show => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input type="text" value="${show.name}" /></td>
+      <td><input type="time" value="${show.starttime.slice(0,5)}" /></td>
+      <td><input type="time" value="${show.endtime.slice(0,5)}" /></td>
+      <td><button onclick="this.closest('tr').remove()">Remove</button></td>
+    `;
+    tdata.appendChild(tr);
+  });
+
+  // Fill Ticket Categories
+  const tdata2 = document.getElementById("tdata2");
+  tdata2.innerHTML = "";
+  ticketcategories.map(cat => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input type="text" value="${cat.category}" /></td>
+      <td><input type="number" value="${cat.price}" /></td>
+      <td><input type="number" value="${cat.count}" /></td>
+      <td><button onclick="this.closest('tr').remove()">Remove</button></td>
+    `;
+    tdata2.appendChild(tr);
+  });
+
+  // Fill Pricing Plans
+  const tdata3 = document.getElementById("tdata3");
+  tdata3.innerHTML = "";
+  pricingplans.map(plan => {
+    const tr = document.createElement("tr");
+
+    const showCheckboxes = plan.shows.map(s => `
+      <div class="show-ckeckbox">
+        <input type="checkbox" ${s.shownamestatus ? "checked" : ""} />
+        <label>${s.showname}</label>
+      </div>
+    `).join("");
+
+    const ticketInputs = plan.tickets.map(t => `
+      <div class="pricing-showtime">
+        <div>
+          <input type="checkbox" ${t.categorystatus === 1 ? "checked" : ""} />
+          <label>${t.category}</label>
+        </div>
+        <div class="pricing-showtime-in">
+          <input type="text" value="${t.price}" />
+          <input type="text" value="${t.count}" />
+        </div>
+      </div>
+    `).join("");
+
+    tr.innerHTML = `
+      <td><input type="date" value="${new Date(plan.startdate).toISOString().split("T")[0]}" /></td>
+      <td><input type="date" value="${new Date(plan.enddate).toISOString().split("T")[0]}" /></td>
+      <td>${showCheckboxes}</td>
+      <td>${ticketInputs}</td>
+      <td><button onclick="this.closest('tr').remove()">Remove</button></td>
+    `;
+    tdata3.appendChild(tr);
+  });
+}
+loadAllEvents();

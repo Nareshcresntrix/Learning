@@ -14,7 +14,7 @@ const thearterinput = document.querySelector("#thearter input[type='text']");
 const selects = document.getElementById("theaterSelect");
 const h1 = document.getElementById("element");
 const alldatetime = [];
-const theaternamearrEl = [];
+const theaternamearrEll = [];
 
 let previousStart = starttimeEl.value;
 let previousEnd = endtimeEl.value;
@@ -1015,7 +1015,7 @@ function updateTicketCategory() {
           priceInput1.value = price1Input.value;
         });
       }
-      F;
+
       if (price2Input) {
         price2Input.addEventListener("input", () => {
           priceInput2.value = price2Input.value;
@@ -1045,13 +1045,13 @@ function updateTicketCategory() {
 thearterinput.addEventListener("change", (e) => {
   const theaternameEl = e.target.value.trim();
   if (theaternameEl) {
-    theaternamearrEl.push(theaternameEl);
+    theaternamearrEll.push(theaternameEl);
     // thearterinput.value = "";
   }
 });
 updatebtn.addEventListener("click", () => {
-  selects.innerHTML = "";
-  theaternamearrEl.map((name) => {
+  // selects.innerHTML = "";
+  theaternamearrEll.map((name) => {
     const option = document.createElement("option");
     option.innerText = name;
     option.value = name;
@@ -1059,9 +1059,8 @@ updatebtn.addEventListener("click", () => {
     thearterinput.value = "";
   });
   // theaternamearrEl.length = 0;
-  console.log(theaternamearrEl);
+  // console.log(theaternamearrEl);
 });
-
 function submitEvent() {
   if (
     tdata.querySelectorAll("tr").length === 0 ||
@@ -1073,20 +1072,16 @@ function submitEvent() {
     );
     return;
   }
-  if (theaternamearrEl.length === 0) {
-    alert("Please fill out theater name");
-    return;
-  }
 
   const eventmanagement = {
     theatername: {
-      name: theaternamearrEl,
+      name: theaternamearrEll,
     },
     eventdefaultstartandend: {
-      startdate: alldatetime[0].startdate,
-      enddate: alldatetime[0].enddate,
-      starttime: alldatetime[0].starttime,
-      endtime: alldatetime[0].endtime,
+      startdate: startdataEl.value,
+      enddate: enddataEl.value,
+      starttime: starttimeEl.value,
+      endtime: endtimeEl.value,
     },
     showtimes: [],
     ticketcategories: [],
@@ -1162,7 +1157,6 @@ function submitEvent() {
 
     const tickets = [];
     const ticketBlocks = planBlock.querySelectorAll(".pricing-showtime");
-    //  updateTicketCategory();
     for (const ticketBlock of ticketBlocks) {
       const checkbox = ticketBlock.querySelector("input[type='checkbox']");
       const priceInput = ticketBlock.querySelector(
@@ -1171,6 +1165,7 @@ function submitEvent() {
       const countInput = ticketBlock.querySelector(
         ".pricing-showtime-in input:nth-child(2)"
       );
+
       if (!checkbox.value) {
         alert("no value here");
         return;
@@ -1186,8 +1181,13 @@ function submitEvent() {
     }
 
     //  Skip this block if any required data is missing, but continue others
-    if (!start || !end || shows.length === 0 || tickets.length === 0) {
-      alert("please fill required data in pricing plan");
+    const hasCheckedShow = shows.some((s) => s.shownamestatus === true);
+    const hasCheckedTicket = tickets.some((t) => t.catecheck === true);
+
+    if (!start || !end || !hasCheckedShow || !hasCheckedTicket) {
+      alert(
+        "Please fill required data in pricing plan (at least one checked show and ticket)."
+      );
       return;
     } else {
       eventmanagement.pricingplans.push({
@@ -1217,11 +1217,137 @@ function submitEvent() {
 
 updatebtn.addEventListener("click", submitEvent);
 
-async function displaydefaultdateandtime(){
-  const data=await fetch(`http://localhost:3000/event/1`);
-  const res=await data.json();
-  console.log(res);
+// async function displaydefaultdateandtime(){
+//   const data=await fetch(`http://localhost:3000/event/1`);
+//   const res=await data.json();
+//  console.log(res);
 
+// }
+// displaydefaultdateandtime()
+
+let allEvents = [];
+
+async function loadAllEvents() {
+  try {
+    const res = await fetch("http://localhost:3000/events/all");
+    allEvents = await res.json();
+    populateTheaterDropdown(allEvents);
+  } catch (err) {
+    console.error("Error loading events:", err);
+  }
 }
-displaydefaultdateandtime()
 
+function populateTheaterDropdown(events) {
+  const select = document.getElementById("theaterSelect");
+  // select.innerHTML = `<option value="">Select Theater</option>`; // Reset
+
+  const uniqueNames = [...new Set(events.map((e) => e.event.thearter_name))];
+
+  uniqueNames.map((name) => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.innerText = name;
+    select.appendChild(opt);
+  });
+}
+document.getElementById("theaterSelect").addEventListener("change", (e) => {
+  const selected = e.target.value;
+  const eventData = allEvents.find((e) => e.event.thearter_name === selected);
+  if (eventData) {
+    fillEventForm(eventData);
+  }
+});
+function fillEventForm(data) {
+  const { event, showtimes, ticketcategories, pricingplans } = data;
+
+  // Fill Date & Time
+  document.getElementById("startDate").value = event.startdate
+  document.getElementById("endDate").value = event.enddate
+  document.getElementById("startTime").value = event.starttime;
+  document.getElementById("endTime").value = event.endtime;
+
+  // Fill Showtimes
+  const tdata = document.getElementById("tdata");
+  tdata.innerHTML = "";
+  showtimes.map((show) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input type="text" value="${show.name}" /></td>
+      <td><input type="time" value="${show.starttime}" /></td>
+      <td><input type="time" value="${show.endtime}" /></td>
+      <td><button onclick="this.closest('tr').remove()" class="btn">Remove</button></td>
+    `;
+    tdata.appendChild(tr);
+  });
+
+  // Fill Ticket Categories
+  const tdata2 = document.getElementById("tdata2");
+  tdata2.innerHTML = "";
+  ticketcategories.map((cat) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input type="text" value="${cat.category}" /></td>
+      <td><input type="number" value="${cat.price}" /></td>
+      <td><input type="number" value="${cat.count}" /></td>
+      <td><button onclick="this.closest('tr').remove()" class="btn">Remove</button></td>
+    `;
+    tdata2.appendChild(tr);
+  });
+
+  // Fill Pricing Plans
+  const tdata3 = document.getElementById("tdata3");
+  tdata3.innerHTML = "";
+  pricingplans.map((plan) => {
+    const tr = document.createElement("tr");
+
+    const showCheckboxes = plan.shows
+      .map(
+        (s) => `
+      <div class="show-ckeckbox">
+        <input type="checkbox" ${s.shownamestatus ? "checked" : ""} />
+        <label>${s.showname}</label>
+      </div>
+    `
+      )
+      .join("");
+
+    const ticketInputs = plan.tickets
+      .map(
+        (t) => `
+      <div class="pricing-showtime">
+        <div>
+          <input type="checkbox" ${t.categorystatus === 1 ? "checked" : ""} />
+          <label>${t.category}</label>
+        </div>
+        <div class="pricing-showtime-in">
+          <input type="text" value="${t.price}" />
+          <input type="text" value="${t.count}" />
+        </div>
+      </div>
+    `
+      )
+      .join("");
+
+    tr.innerHTML = `
+      <td>
+      <div class="priceinput">
+      <input type="date" value="${plan.startdate}" />
+       </div>
+      </td>
+      <td>
+      <div class="priceinput">
+      <input type="date" value="${plan.enddate}" />
+       </div>
+      </td>
+      <td>${showCheckboxes}</td>
+      <td>${ticketInputs}</td>
+      <td><button onclick="this.closest('tr').remove()" class="btn">Remove</button></td>
+    `;
+    tdata3.appendChild(tr);
+  });
+}
+loadAllEvents();
+// const clear = document.getElementById("Clear");
+// clear.addEventListener("click", () => {
+//   window.location.reload();
+// });

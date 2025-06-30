@@ -137,56 +137,55 @@ app.post("/event/api", (req, res) => {
     }
 
     // Insert pricing plans and nested tickets
-if (Array.isArray(pricingplans)) {
-  pricingplans.forEach((plan) => {
-    const planQuery = `
+    if (Array.isArray(pricingplans)) {
+      pricingplans.forEach((plan) => {
+        const planQuery = `
       INSERT INTO pricing_plans (event_id, startdate, enddate, shows)
       VALUES (?, ?, ?, ?)
     `;
 
-    const showString = Array.isArray(plan.shows)
-      ? plan.shows
-          .map((s) => `${s.showname}:${s.shownamestatus ? "1" : "0"}`)
-          .join(",")
-      : "";
+        const showString = Array.isArray(plan.shows)
+          ? plan.shows
+              .map((s) => `${s.showname}:${s.shownamestatus ? "1" : "0"}`)
+              .join(",")
+          : "";
 
-    conn.query(
-      planQuery,
-      [eventId, plan.startdate, plan.enddate, showString],
-      (err, planResult) => {
-        if (err) {
-          console.error("Pricing plan insert error:", err);
-          return;
-        }
+        conn.query(
+          planQuery,
+          [eventId, plan.startdate, plan.enddate, showString],
+          (err, planResult) => {
+            if (err) {
+              console.error("Pricing plan insert error:", err);
+              return;
+            }
 
-        const planId = planResult.insertId;
+            const planId = planResult.insertId;
 
-        if (Array.isArray(plan.tickets)) {
-          plan.tickets.forEach((ticket) => {
-            const ticketQuery = `
+            if (Array.isArray(plan.tickets)) {
+              plan.tickets.forEach((ticket) => {
+                const ticketQuery = `
               INSERT INTO plan_tickets (plan_id, category, price, count, categorystatus)
               VALUES (?, ?, ?, ?, ?)
             `;
-            conn.query(
-              ticketQuery,
-              [
-                planId,
-                ticket.category,
-                ticket.price,
-                ticket.count,
-                ticket.catecheck ? 1 : 0,
-              ],
-              (err) => {
-                if (err) console.error("Plan ticket insert error:", err);
-              }
-            );
-          });
-        }
-      }
-    );
-  });
-}
-
+                conn.query(
+                  ticketQuery,
+                  [
+                    planId,
+                    ticket.category,
+                    ticket.price,
+                    ticket.count,
+                    ticket.catecheck ? 1 : 0,
+                  ],
+                  (err) => {
+                    if (err) console.error("Plan ticket insert error:", err);
+                  }
+                );
+              });
+            }
+          }
+        );
+      });
+    }
 
     res.json({
       message: "Event with multiple showtimes/plans saved",
@@ -194,84 +193,187 @@ if (Array.isArray(pricingplans)) {
     });
   });
 });
-app.get("/event/:id", (req, res) => {
-  const eventId = req.params.id;
 
-  const getEventQuery = `SELECT * FROM events WHERE id = ?`;
-  const getShowtimesQuery = `SELECT * FROM showtimes WHERE event_id = ?`;
-  const getTicketCategoriesQuery = `SELECT * FROM ticket_categories WHERE event_id = ?`;
-  const getPricingPlansQuery = `SELECT * FROM pricing_plans WHERE event_id = ?`;
-  const getPlanTicketsQuery = `SELECT * FROM plan_tickets WHERE plan_id = ?`;
+app.get("/events/all", (req, res) => {
+  const getEventsQuery = `
+    SELECT id, thearter_name, 
+           DATE_FORMAT(startdate, '%Y-%m-%d') as startdate, 
+           DATE_FORMAT(enddate, '%Y-%m-%d') as enddate,
+           TIME_FORMAT(starttime, '%H:%i') as starttime, 
+           TIME_FORMAT(endtime, '%H:%i') as endtime 
+    FROM events
+  `;
 
-  conn.query(getEventQuery, [eventId], (err, eventRows) => {
-    if (err) {
-      console.error("Error fetching event:", err);
-      return res.status(500).json({ error: "Event fetch failed" });
-    }
+  const getShowtimesQuery = `
+    SELECT id, event_id, name, 
+           TIME_FORMAT(starttime, '%H:%i') as starttime, 
+           TIME_FORMAT(endtime, '%H:%i') as endtime 
+    FROM showtimes
+  `;
 
-    if (eventRows.length === 0) {
-      return res.status(404).json({ error: "Event not found" });
-    }
+  const getTicketCategoriesQuery = `
+    SELECT * FROM ticket_categories
+  `;
 
-    const event = eventRows[0];
+  const getPricingPlansQuery = `
+    SELECT id, event_id, 
+           DATE_FORMAT(startdate, '%Y-%m-%d') as startdate, 
+           DATE_FORMAT(enddate, '%Y-%m-%d') as enddate, 
+           shows 
+    FROM pricing_plans
+  `;
 
-    // Fetch showtimes
-    conn.query(getShowtimesQuery, [eventId], (err, showtimes) => {
-      if (err) return res.status(500).json({ error: "Showtimes fetch failed" });
+  const getPlanTicketsQuery = `
+    SELECT * FROM plan_tickets
+  `;
 
-      // Fetch ticket categories
-      conn.query(getTicketCategoriesQuery, [eventId], (err, ticketcategories) => {
-        if (err) return res.status(500).json({ error: "Ticket categories fetch failed" });
+  conn.query(getEventsQuery, (err, eventRows) => {
+    if (err) return res.status(500).json({ error: "Failed to fetch events" });
 
-        // Fetch pricing plans
-        conn.query(getPricingPlansQuery, [eventId], (err, pricingplansRaw) => {
-          if (err) return res.status(500).json({ error: "Pricing plans fetch failed" });
+    conn.query(getShowtimesQuery, (err, showtimes) => {
+      if (err)
+        return res.status(500).json({ error: "Failed to fetch showtimes" });
 
-          const pricingplans = [];
-          let completed = 0;
+      conn.query(getTicketCategoriesQuery, (err, ticketcategories) => {
+        if (err)
+          return res
+            .status(500)
+            .json({ error: "Failed to fetch ticket categories" });
 
-          if (pricingplansRaw.length === 0) {
-            return res.json({
-              event,
-              showtimes,
-              ticketcategories,
-              pricingplans: [],
-            });
-          }
+        conn.query(getPricingPlansQuery, (err, pricingplansRaw) => {
+          if (err)
+            return res
+              .status(500)
+              .json({ error: "Failed to fetch pricing plans" });
 
-          pricingplansRaw.forEach((plan) => {
-            conn.query(getPlanTicketsQuery, [plan.id], (err, tickets) => {
-              if (err) {
-                console.error("Error fetching tickets:", err);
-                tickets = [];
-              }
+          conn.query(getPlanTicketsQuery, (err, planTickets) => {
+            if (err)
+              return res
+                .status(500)
+                .json({ error: "Failed to fetch plan tickets" });
 
-              pricingplans.push({
-                ...plan,
-                shows: plan.shows.split(",").map((item) => {
-                  const [showname, shownamestatus] = item.split(":");
-                  return { showname, shownamestatus: shownamestatus === "1" };
-                }),
-                tickets,
-              });
+            const finalEvents = eventRows.map((event) => {
+              const eventShowtimes = showtimes.filter(
+                (s) => s.event_id === event.id
+              );
+              const eventTickets = ticketcategories.filter(
+                (t) => t.event_id === event.id
+              );
 
-              completed++;
-              if (completed === pricingplansRaw.length) {
-                // Final response once all plans processed
-                res.json({
-                  event,
-                  showtimes,
-                  ticketcategories,
-                  pricingplans,
+              const plans = pricingplansRaw
+                .filter((p) => p.event_id === event.id)
+                .map((plan) => {
+                  const planTicketsForThis = planTickets.filter(
+                    (pt) => pt.plan_id === plan.id
+                  );
+
+                  return {
+                    ...plan,
+                    shows: plan.shows.split(",").map((item) => {
+                      const [showname, shownamestatus] = item.split(":");
+                      return {
+                        showname,
+                        shownamestatus: shownamestatus === "1",
+                      };
+                    }),
+                    tickets: planTicketsForThis,
+                  };
                 });
-              }
+
+              return {
+                event,
+                showtimes: eventShowtimes,
+                ticketcategories: eventTickets,
+                pricingplans: plans,
+              };
             });
+
+            res.json(finalEvents);
           });
         });
       });
     });
   });
 });
+
+// app.get("/event/:id", (req, res) => {
+//   const eventId = req.params.id;
+
+//   const getEventQuery = `SELECT * FROM events WHERE id = ?`;
+//   const getShowtimesQuery = `SELECT * FROM showtimes WHERE event_id = ?`;
+//   const getTicketCategoriesQuery = `SELECT * FROM ticket_categories WHERE event_id = ?`;
+//   const getPricingPlansQuery = `SELECT * FROM pricing_plans WHERE event_id = ?`;
+//   const getPlanTicketsQuery = `SELECT * FROM plan_tickets WHERE plan_id = ?`;
+
+//   conn.query(getEventQuery, [eventId], (err, eventRows) => {
+//     if (err) {
+//       console.error("Error fetching event:", err);
+//       return res.status(500).json({ error: "Event fetch failed" });
+//     }
+
+//     if (eventRows.length === 0) {
+//       return res.status(404).json({ error: "Event not found" });
+//     }
+
+//     const event = eventRows[0];
+
+//     // Fetch showtimes
+//     conn.query(getShowtimesQuery, [eventId], (err, showtimes) => {
+//       if (err) return res.status(500).json({ error: "Showtimes fetch failed" });
+
+//       // Fetch ticket categories
+//       conn.query(getTicketCategoriesQuery, [eventId], (err, ticketcategories) => {
+//         if (err) return res.status(500).json({ error: "Ticket categories fetch failed" });
+
+//         // Fetch pricing plans
+//         conn.query(getPricingPlansQuery, [eventId], (err, pricingplansRaw) => {
+//           if (err) return res.status(500).json({ error: "Pricing plans fetch failed" });
+
+//           const pricingplans = [];
+//           let completed = 0;
+
+//           if (pricingplansRaw.length === 0) {
+//             return res.json({
+//               event,
+//               showtimes,
+//               ticketcategories,
+//               pricingplans: [],
+//             });
+//           }
+
+//           pricingplansRaw.forEach((plan) => {
+//             conn.query(getPlanTicketsQuery, [plan.id], (err, tickets) => {
+//               if (err) {
+//                 console.error("Error fetching tickets:", err);
+//                 tickets = [];
+//               }
+
+//               pricingplans.push({
+//                 ...plan,
+//                 shows: plan.shows.split(",").map((item) => {
+//                   const [showname, shownamestatus] = item.split(":");
+//                   return { showname, shownamestatus: shownamestatus === "1" };
+//                 }),
+//                 tickets,
+//               });
+
+//               completed++;
+//               if (completed === pricingplansRaw.length) {
+//                 // Final response once all plans processed
+//                 res.json({
+//                   event,
+//                   showtimes,
+//                   ticketcategories,
+//                   pricingplans,
+//                 });
+//               }
+//             });
+//           });
+//         });
+//       });
+//     });
+//   });
+// });
 
 // app.get("/event/:id", (req, res) => {
 //   const eventId = req.params.id;
