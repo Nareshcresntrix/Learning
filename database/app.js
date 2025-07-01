@@ -164,18 +164,15 @@ app.post("/event/api", (req, res) => {
             if (Array.isArray(plan.tickets)) {
               plan.tickets.forEach((ticket) => {
                 const ticketQuery = `
-              INSERT INTO plan_tickets (plan_id, category, price, count, categorystatus)
-              VALUES (?, ?, ?, ?, ?)
+              INSERT INTO plan_tickets (plan_id, category, price, count)
+              VALUES (?, ?, ?, ?)
             `;
+                const catcheck = `${ticket.category}:${
+                  ticket.catecheck ? "1" : "0"
+                }`;
                 conn.query(
                   ticketQuery,
-                  [
-                    planId,
-                    ticket.category,
-                    ticket.price,
-                    ticket.count,
-                    ticket.catecheck ? 1 : 0,
-                  ],
+                  [planId, catcheck, ticket.price, ticket.count],
                   (err) => {
                     if (err) console.error("Plan ticket insert error:", err);
                   }
@@ -266,7 +263,7 @@ app.get("/events/all", (req, res) => {
                   const planTicketsForThis = planTickets.filter(
                     (pt) => pt.plan_id === plan.id
                   );
-
+                  console.log("planTicketsForThis", planTicketsForThis);
                   return {
                     ...plan,
                     shows: plan.shows.split(",").map((item) => {
@@ -276,7 +273,15 @@ app.get("/events/all", (req, res) => {
                         shownamestatus: shownamestatus === "1",
                       };
                     }),
-                    tickets: planTicketsForThis,
+                    tickets: planTicketsForThis.map((pt) => {
+                      const [category, catecheck] = pt.category.split(":");
+                      return {
+                        category,
+                        catecheck: catecheck === "1",
+                        price: pt.price,
+                        count: pt.count,
+                      };
+                    }),
                   };
                 });
 
@@ -293,6 +298,152 @@ app.get("/events/all", (req, res) => {
         });
       });
     });
+  });
+});
+
+app.put("/event/api/:id", (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const {
+    theatername,
+    eventdefaultstartandend,
+    showtimes,
+    ticketcategories,
+    pricingplans,
+  } = req.body;
+
+  const updateEventQuery = `
+    UPDATE events SET thearter_name = ?, startdate = ?, enddate = ?, starttime = ?, endtime = ?
+    WHERE id = ?
+  `;
+  const eventValues = [
+    theatername.name,
+    eventdefaultstartandend.startdate,
+    eventdefaultstartandend.enddate,
+    eventdefaultstartandend.starttime,
+    eventdefaultstartandend.endtime,
+    eventId,
+  ];
+
+  conn.query(updateEventQuery, eventValues, (err) => {
+    if (err) {
+      console.error("Failed to update event:", err);
+      return res.status(500).json({ message: "Failed to update event" });
+    }
+
+    // Delete previous entries
+    const deleteQueries = [
+      `DELETE FROM showtimes WHERE event_id = ?`,
+      `DELETE FROM ticket_categories WHERE event_id = ?`,
+      `DELETE pt FROM plan_tickets pt JOIN pricing_plans pp ON pt.plan_id = pp.id WHERE pp.event_id = ?`,
+      `DELETE FROM pricing_plans WHERE event_id = ?`,
+    ];
+
+    // Execute deletes in sequence
+    let i = 0;
+    const runNextDelete = () => {
+      if (i >= deleteQueries.length) {
+        insertUpdatedData(); // After all deletes, insert new data
+        return;
+      }
+
+      conn.query(deleteQueries[i], [eventId], (err) => {
+        if (err) {
+          console.error("Failed to delete:", deleteQueries[i], err);
+          return res.status(500).json({ message: "Failed during cleanup" });
+        }
+        i++;
+        runNextDelete();
+      });
+    };
+
+    runNextDelete();
+
+    // Now re-insert everything
+    function insertUpdatedData() {
+      // Insert showtimes
+      if (Array.isArray(showtimes)) {
+        showtimes.forEach((show) => {
+          const showQuery = `
+            INSERT INTO showtimes (event_id, name, starttime, endtime)
+            VALUES (?, ?, ?, ?)
+          `;
+          conn.query(
+            showQuery,
+            [eventId, show.name, show.starttime, show.endtime],
+            (err) => {
+              if (err) console.error("Showtime insert error:", err);
+            }
+          );
+        });
+      }
+
+      // Insert ticket categories
+      if (Array.isArray(ticketcategories)) {
+        ticketcategories.forEach((cat) => {
+          const ticketQuery = `
+            INSERT INTO ticket_categories (event_id, category, price, count)
+            VALUES (?, ?, ?, ?)
+          `;
+          conn.query(
+            ticketQuery,
+            [eventId, cat.category, cat.price, cat.count],
+            (err) => {
+              if (err) console.error("Ticket category insert error:", err);
+            }
+          );
+        });
+      }
+
+      // Insert pricing plans and nested tickets
+      if (Array.isArray(pricingplans)) {
+        pricingplans.forEach((plan) => {
+          const planQuery = `
+            INSERT INTO pricing_plans (event_id, startdate, enddate, shows)
+            VALUES (?, ?, ?, ?)
+          `;
+
+          const showString = Array.isArray(plan.shows)
+            ? plan.shows
+                .map((s) => `${s.showname}:${s.shownamestatus ? "1" : "0"}`)
+                .join(",")
+            : "";
+
+          conn.query(
+            planQuery,
+            [eventId, plan.startdate, plan.enddate, showString],
+            (err, planResult) => {
+              if (err) {
+                console.error("Pricing plan insert error:", err);
+                return;
+              }
+
+              const planId = planResult.insertId;
+
+              if (Array.isArray(plan.tickets)) {
+                plan.tickets.forEach((ticket) => {
+                  const ticketQuery = `
+                    INSERT INTO plan_tickets (plan_id, category, price, count)
+                    VALUES (?, ?, ?, ?)
+                  `;
+                  const catcheck = `${ticket.category}:${
+                    ticket.catecheck ? "1" : "0"
+                  }`;
+                  conn.query(
+                    ticketQuery,
+                    [planId, catcheck, ticket.price, ticket.count],
+                    (err) => {
+                      if (err) console.error("Plan ticket insert error:", err);
+                    }
+                  );
+                });
+              }
+            }
+          );
+        });
+      }
+
+      res.json({ message: "Event updated successfully", event_id: eventId });
+    }
   });
 });
 
